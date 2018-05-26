@@ -90,6 +90,9 @@ sub _on_worker_events {
 #md_
 sub start_worker {
     my ($self, $cb) = @_;
+    my $runner = $self->runner;
+    my $cfg = $runner->cfg->get_hashref({default => {}}, qw(workers cfg));
+    $cfg->{ARGV} = $runner->ARGV;
     $self->logger->info('==>> ' . ${self}->name);
     $self->_ready(0);
     my $module = 'Maboul::Worker::Bootstrap';
@@ -97,7 +100,7 @@ sub start_worker {
     AnyEvent::Fork
         ->new
         ->require($module)
-        ->send_arg($self->name, encode_json($self->runner->cfg->get_hashref({default => {}}, qw(workers cfg))))
+        ->send_arg($self->name, encode_json($cfg))
         ->run("${module}::bootstrap", sub { $self->_on_worker_events($cb, @_) });
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
 }

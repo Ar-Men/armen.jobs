@@ -15,7 +15,7 @@ package Maboul::Service;
 use Exclus::Exclus;
 use List::Util qw(max min);
 use Moo;
-use Types::Standard qw(HashRef InstanceOf);
+use Types::Standard qw(ArrayRef HashRef InstanceOf);
 use Maboul::Worker::Handler;
 use namespace::clean;
 
@@ -33,6 +33,12 @@ has '+description' => (default => sub { 'Le µs chargé de gérer les workers' }
 #md_
 has '_workers' => (
     is => 'ro', isa => HashRef[InstanceOf['Maboul::Worker::Handler']], default => sub { {} }, init_arg => undef
+);
+
+#md_### ARGV
+#md_
+has 'ARGV' => (
+    is => 'ro', isa => ArrayRef, default => sub { [@ARGV] }, init_arg => undef
 );
 
 #md_## Les méthodes

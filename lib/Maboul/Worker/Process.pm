@@ -113,7 +113,7 @@ sub _on_cmd {
 #md_
 sub _setup_applications {
     my ($self) = @_;
-    my $app = $self->cfg->create({default => undef}, 'applications');
+    my $app = $self->config->create({default => undef}, 'applications');
     return unless $app;
     $app->foreach_key(
         {create => 1},

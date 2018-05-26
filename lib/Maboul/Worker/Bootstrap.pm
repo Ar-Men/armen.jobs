@@ -24,13 +24,15 @@ use Maboul::Worker::Process;
 #md_### bootstrap()
 #md_
 sub bootstrap {
-    my ($socket, $name, $cfg) = @_;
+    my ($socket, $name, $json_cfg) = @_;
     my $exit = -1;
     try {
+        my $cfg = decode_json($json_cfg);
+        push @ARGV, @{delete $cfg->{ARGV}};
         my $worker = Maboul::Worker::Process->new(
             socket => $socket,
             name => $name,
-            cfg => Exclus::Data->new(data => decode_json($cfg))
+            cfg => Exclus::Data->new(data => $cfg)
         );
         $exit = $worker->process;
     }
