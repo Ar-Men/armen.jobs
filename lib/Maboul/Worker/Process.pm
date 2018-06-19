@@ -136,19 +136,18 @@ sub _setup {
 #md_### _build_job()
 #md_
 sub _build_job {
-    my ($self, $hjob) = @_;
-    my $job;
-    try {
-        $job = use_module($hjob->{application} . '::Jobs::' . $hjob->{type})->new(runner => $self, %$hjob);
+    my ($self, $job) = @_;
+    return try {
+        return use_module($job->{application} . '::Jobs::' . $job->{type})->new(runner => $self, %$job);
     }
     catch {
         $self->error(
             "Impossible d'instancier ce job",
-            [application => $hjob->{application}, type => $hjob->{type}, error => "$_"]
+            [application => $job->{application}, type => $job->{type}, error => "$_"]
         );
         #TODO: publish(Job.Abort) -> Vortex
+        return;
     };
-    return $job;
 }
 
 #md_### _job_execute()
