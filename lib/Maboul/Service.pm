@@ -25,8 +25,9 @@ extends qw(Obscur::Runner::Service);
 #md_
 
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
-has '+name'        => (default => sub { 'Maboul' });
-has '+description' => (default => sub { 'Le µs chargé de gérer les workers' });
+has '+name'          => (default => sub { 'Maboul' });
+has '+description'   => (default => sub { 'Le µs chargé de gérer les workers' });
+has '+long_stopping' => (default => sub { 1 });
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
 
 #md_### _workers
