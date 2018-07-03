@@ -28,7 +28,7 @@ sub bootstrap {
     my $exit = -1;
     try {
         my $cfg = decode_json($json_cfg);
-        push @ARGV, @{delete $cfg->{ARGV}};
+        push @ARGV, @{delete $cfg->{_ARGV}};
         my $worker = Maboul::Worker::Process->new(
             socket => $socket,
             name => $name,

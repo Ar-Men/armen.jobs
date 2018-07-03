@@ -92,7 +92,7 @@ sub start_worker {
     my ($self, $cb) = @_;
     my $runner = $self->runner;
     my $cfg = $runner->cfg->get_hashref({default => {}}, qw(workers cfg));
-    $cfg->{ARGV} = $runner->ARGV;
+    $cfg->{_ARGV} = $runner->ARGV;
     $self->logger->info('==>> ' . ${self}->name);
     $self->_ready(0);
     my $module = 'Maboul::Worker::Bootstrap';

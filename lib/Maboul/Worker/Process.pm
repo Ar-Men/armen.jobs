@@ -166,7 +166,7 @@ sub _job_execute {
         }
     }
     catch {
-        if ($_->$_isa('EX::client::no_endpoint')) { #TODO
+        if ($_->$_isa('EX::Client::NoEndpoint')) { #TODO
             $self->notice("$_");
         }
         else {
