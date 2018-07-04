@@ -17,6 +17,7 @@ use Moo;
 use Types::Standard qw(InstanceOf);
 use Exclus::Util qw(plugin);
 use Gadget::Job;
+use Vortex::Bucket;
 use namespace::clean;
 
 extends qw(Obscur::Runner::Service);
@@ -46,11 +47,57 @@ sub _build__backend {
     return $self->load_object('Vortex::Backend', $backend_config->get_str('use'), $backend_config->create('cfg'));
 }
 
+#md_### _create_bucket()
+#md_
+sub _create_bucket {
+    my ($self) = @_;
+    return Vortex::Bucket->new(runner => $self, backend => $self->_backend);
+}
+
+#md_### _declare_job()
+#md_
+sub _declare_job {
+    my ($self, $job) = @_;
+    $self->info(
+        'New job',
+        [
+            id          => $job->id,
+            application => $job->application,
+            type        => $job->type,
+            label       => $job->label,
+            origin      => $job->origin,
+            priority    => $job->priority,
+            category    => $job->category,
+            workflow    => $job->workflow_id
+        ]
+    );
+    $job->export;
+}
+
 #md_### _insert_job()
 #md_
 sub _insert_job {
     my ($self, $message) = @_;
     my $job = Gadget::Job->new(runner => $self, %{$message->{payload}});
+    my $bucket = $self->_create_bucket;
+    my $inserted;
+    {
+        my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        $inserted = $bucket->maybe_insert($job);
+    }
+    if ($inserted) {
+        $self->_declare_job($job);
+    }
+    else {
+        $self->notice(
+            'Un job identique de même catégorie est en cours',
+            [
+                application => $job->application,
+                type        => $job->type,
+                category    => $job->category
+            ]
+        );
+    }
 }
 
 #md_### _update_job()

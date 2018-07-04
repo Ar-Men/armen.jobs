@@ -45,5 +45,36 @@ has '_buckets' => (
 #md_## Les méthodes
 #md_
 
+#md_### insert_bucket()
+#md_
+sub insert_bucket {
+    my ($self, $bucket) = @_;
+    $self->_buckets->insert_one($bucket);
+}
+
+#md_### maybe_insert_bucket()
+#md_
+sub maybe_insert_bucket {
+    my ($self, $bucket, $category) = @_;
+    return
+        if defined $category && $self->_buckets->count_documents(
+            {
+                jobs => {
+                    '$elemMatch' => {
+                        category => $category,
+                        '$or' => [
+                            {status =>    'TODO'},
+                            {status => 'RUNNING'},
+                            {status => 'PENDING'}
+                        ]
+                    }
+                }
+            },
+            {limit => 1}
+        );
+    $self->insert_bucket($bucket);
+    return 1;
+}
+
 1;
 __END__
