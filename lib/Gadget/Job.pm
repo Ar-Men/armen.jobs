@@ -15,7 +15,7 @@ package Gadget::Job;
 use Exclus::Exclus;
 use Moo;
 use Types::Standard qw(ArrayRef Bool HashRef Int Maybe Str);
-use Exclus::Util qw(create_uuid);
+use Exclus::Util qw(create_uuid to_priority);
 use Gadget::Types qw(JobExclusivity JobStatus);
 use namespace::clean;
 
@@ -63,7 +63,7 @@ has 'priority' => (
 #md_### exclusivity
 #md_
 has 'exclusivity' => (
-    is => 'ro', isa => JobExclusivity, required => 1
+    is => 'ro', isa => JobExclusivity, default => sub { 'NO' }
 );
 
 #md_### category
