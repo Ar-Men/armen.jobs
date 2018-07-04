@@ -14,6 +14,8 @@ package Vortex::Service;
 
 use Exclus::Exclus;
 use Moo;
+use Types::Standard qw(InstanceOf);
+use Exclus::Util qw(plugin);
 use Gadget::Job;
 use namespace::clean;
 
@@ -27,8 +29,22 @@ has '+name'        => (default => sub { 'Vortex' });
 has '+description' => (default => sub { 'Le µs chargé de gérer la persistence des jobs, workflows et notifications' });
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
 
+#md_### _backend
+#md_
+has '_backend' => (
+    is => 'lazy', isa => InstanceOf['Obscur::Object'], init_arg => undef
+);
+
 #md_## Les méthodes
 #md_
+
+#md_### _build__backend()
+#md_
+sub _build__backend {
+    my $self = shift;
+    my $backend_config = $self->cfg->create('backend');
+    return $self->load_object('Vortex::Backend', $backend_config->get_str('use'), $backend_config->create('cfg'));
+}
 
 #md_### _insert_job()
 #md_
