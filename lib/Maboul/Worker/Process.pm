@@ -157,7 +157,7 @@ sub _job_execute {
     my $hjob;
     try {
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
-        #$hjob = $self->client->get('Vortex', 'next_job', $self->node_name, $self->name);
+        $hjob = $self->client->get('Vortex', 'next_job', $self->node_name, $self->name);
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
         if ($hjob && (my $job = $self->_build_job($hjob))) {
             $self->_job_counter($self->_job_counter + 1);
@@ -166,7 +166,7 @@ sub _job_execute {
         }
     }
     catch {
-        if ($_->$_isa('EX::Client::NoEndpoint')) { #TODO
+        if ($_->$_isa('EX::Client::NoEndpoint')) {
             $self->notice("$_");
         }
         else {

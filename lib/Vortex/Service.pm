@@ -47,6 +47,20 @@ sub _build__backend {
     return $self->load_object('Vortex::Backend', $backend_config->get_str('use'), $backend_config->create('cfg'));
 }
 
+#md_### _try_get_next_job()
+#md_
+sub _try_get_next_job {
+    my ($self, $respond, $rr, $p) = @_;
+    $respond->($rr->render->finalize);
+}
+
+#md_### build_API()
+#md_
+sub build_API {
+    my ($self, $api_key) = @_;
+    $self->server->get("/$api_key/v0/next_job", sub { $self->_try_get_next_job(@_) });
+}
+
 #md_### _create_bucket()
 #md_
 sub _create_bucket {
