@@ -76,5 +76,35 @@ sub maybe_insert_bucket {
     return 1;
 }
 
+#md_### _get_running_jobs()
+#md_
+sub _get_running_jobs {
+    my ($self) = @_;
+    my $running = {};
+    my $cursor = $self->_buckets->find({jobs => {'$elemMatch' => {status => 'RUNNING'}}});
+    while (my $bucket = $cursor->next) {
+        my $job = $bucket->{jobs}->[-1];
+        # Un job exclusif de type 'ALL' est en cours ?
+        return if $job->{exclusivity} eq 'ALL';
+        my $application = $job->{application};
+        my $type = $job->{type};
+        my $ref = $running->{$application}->{$type};
+        $ref->{count} = 0 unless exists $ref->{count};
+        $ref->{count} += 1;
+        next
+            unless my $run_group = $job->{run_group};
+        $ref->{$run_group} = 0 unless exists $ref->{$run_group};
+        $ref->{$run_group} += 1;
+    }
+    return $running;
+}
+
+#md_### get_next_bucket()
+#md_
+sub get_next_bucket {
+    my ($self) = @_;
+    return unless defined (my $running = $self->_get_running_jobs);
+}
+
 1;
 __END__

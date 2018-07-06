@@ -14,6 +14,8 @@ package Vortex::Service;
 
 use Exclus::Exclus;
 use Moo;
+use Safe::Isa qw($_isa);
+use Try::Tiny;
 use Types::Standard qw(InstanceOf);
 use Exclus::Util qw(plugin);
 use Gadget::Job;
@@ -47,11 +49,33 @@ sub _build__backend {
     return $self->load_object('Vortex::Backend', $backend_config->get_str('use'), $backend_config->create('cfg'));
 }
 
+#md_### _get_next_job()
+#md_
+sub _get_next_job {
+    my ($self, $node, $worker) = @_;
+    my $unlock = $self->sync->lock_w_unlock('buckets', 3000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    return unless (my $bucket = $self->_backend->get_next_bucket);
+undef;
+}
+
 #md_### _try_get_next_job()
 #md_
 sub _try_get_next_job {
     my ($self, $respond, $rr, $p) = @_;
-    $respond->($rr->render->finalize);
+    my ($node, $worker) = @{$p->get_arrayref('args')};
+    my $hjob;
+    try {
+        if (my $job = $self->_get_next_job($node, $worker)) {
+            $job->export;
+            # Soyons optimiste pour l'exécution à venir
+            $job->succeeded;
+            $hjob = $job->unbless;
+        }
+    }
+    catch {
+        $self->logger->log($_->$_isa('EX::Sync::UnableToLock') ? 'notice' : 'err', "$_");
+    };
+    $respond->($rr->payload($hjob)->render->finalize);
 }
 
 #md_### build_API()

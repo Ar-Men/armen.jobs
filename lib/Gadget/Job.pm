@@ -177,5 +177,17 @@ sub export {
     );
 }
 
+#md_### succeeded()
+#md_
+sub succeeded {
+    my ($self) = @_; #AFAC
+}
+
+#md_### execute()
+#md_
+sub execute {
+    my ($self) = @_; #AFAC
+}
+
 1;
 __END__
