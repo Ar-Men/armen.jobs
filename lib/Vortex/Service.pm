@@ -54,8 +54,13 @@ sub _build__backend {
 sub _get_next_job {
     my ($self, $node, $worker) = @_;
     my $unlock = $self->sync->lock_w_unlock('buckets', 3000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    return unless (my $bucket = $self->_backend->get_next_bucket);
-undef;
+    return unless (my $bucket = Vortex::Bucket->get_next_job($self, $self->_backend));
+    my $job = $bucket->get_job;
+    $job->add_history($node, $worker);
+    $job->status('RUNNING');
+    $bucket->update_job($job);
+    $bucket->replace;
+    return $job;
 }
 
 #md_### _try_get_next_job()

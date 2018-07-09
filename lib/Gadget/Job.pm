@@ -72,9 +72,9 @@ has 'category' => (
     is => 'ro', isa => Maybe[Str], default => sub { undef }
 );
 
-#md_### run_group
+#md_### group
 #md_
-has 'run_group' => (
+has 'group' => (
     is => 'ro', isa => Maybe[Str], default => sub { undef }
 );
 
@@ -160,8 +160,8 @@ sub unbless {
     my $data = {};
     $data->{$_} = $self->$_
         foreach qw(
-            id  application  type  label  origin  priority   exclusivity  category  run_group  run_time  cfg
-            workflow_id workflow_state created_at status run_after retry_count shared private history result
+            id application type label origin priority exclusivity category group run_time cfg workflow_id
+            workflow_state  created_at  status  run_after   retry_count  shared  private  history  result
         );
     return $data;
 }
@@ -175,6 +175,19 @@ sub export {
         'NONE',
         $self->unbless
     );
+}
+
+#md_### add_history()
+#md_
+sub add_history {
+    my ($self, $node, $worker) = @_;
+    push @{$self->history}, {
+        node     => $node,
+        worker   => $worker,
+        reserved => time,
+        begin    => undef,
+        end      => undef
+    };
 }
 
 #md_### succeeded()
