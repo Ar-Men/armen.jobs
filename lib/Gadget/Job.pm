@@ -13,7 +13,9 @@ package Gadget::Job;
 #md_
 
 use Exclus::Exclus;
+use Guard qw(guard);
 use Moo;
+use Try::Tiny;
 use Types::Standard qw(ArrayRef Bool HashRef Int Maybe Str);
 use Exclus::Util qw(create_uuid to_priority);
 use Gadget::Types qw(JobExclusivity JobStatus);
@@ -196,10 +198,50 @@ sub succeeded {
     my ($self) = @_; #AFAC
 }
 
+#md_### _prepare_logger()
+#md_
+sub _prepare_logger {
+    my ($self) = @_;
+    my $logger = $self->logger;
+    my $data = $logger->runner_data;
+    $logger->runner_data(substr($self->workflow_id ? $self->workflow_id : $self->id, 0, 8));
+    return guard { $logger->runner_data($data) };
+}
+
+#md_### _before_run()
+#md_
+sub _before_run {
+    my ($self) = @_;
+    $self->logger->info('Job begin', [application => $self->application, type => $self->type, label => $self->label]);
+}
+
+#md_### run()
+#md_
+sub run {
+    my ($self) = @_;
+}
+
+#md_### _after_run()
+#md_
+sub _after_run {
+    my ($self, $maybe_exception) = @_;
+    $self->logger->info(
+        'Job end',
+        [application => $self->application, type => $self->type, label => $self->label, status => $self->status]
+    );
+}
+
 #md_### execute()
 #md_
 sub execute {
-    my ($self) = @_; #AFAC
+    my ($self) = @_;
+    my $guard = $self->_prepare_logger;
+    $self->_before_run;
+    my $exception;
+###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
+    try { $self->run } catch { $exception = $_ };
+###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
+    $self->_after_run($exception);
 }
 
 1;
