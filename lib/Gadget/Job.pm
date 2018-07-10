@@ -78,9 +78,9 @@ has 'group' => (
     is => 'ro', isa => Maybe[Str], default => sub { undef }
 );
 
-#md_### run_time
+#md_### reference_time
 #md_
-has 'run_time' => (
+has 'reference_time' => (
     is => 'ro', isa => Int, default => sub { time }
 );
 
@@ -126,9 +126,9 @@ has 'retry_count' => (
     is => 'rw', isa => Int, default => sub { 0 }
 );
 
-#md_### shared
+#md_### public
 #md_
-has 'shared' => (
+has 'public' => (
     is => 'ro', isa => HashRef, default => sub { {} }
 );
 
@@ -160,8 +160,8 @@ sub unbless {
     my $data = {};
     $data->{$_} = $self->$_
         foreach qw(
-            id application type label origin priority exclusivity category group run_time cfg workflow_id
-            workflow_state  created_at  status  run_after   retry_count  shared  private  history  result
+            id application  type  label  origin  priority  exclusivity  category  group  reference_time  cfg
+            workflow_id workflow_state created_at status run_after retry_count public private history result
         );
     return $data;
 }

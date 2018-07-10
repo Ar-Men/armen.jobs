@@ -15,7 +15,6 @@ package Vortex::Backend::Plugin::MongoDB;
 use Exclus::Exclus;
 use Moo;
 use Types::Standard qw(InstanceOf);
-use Vortex::Bucket;
 use namespace::clean;
 
 extends qw(Obscur::Object);
@@ -51,7 +50,7 @@ has '_buckets' => (
 sub foreach_running_buckets {
     my ($self, $cb) = @_;
     my $bucket;
-    my $cursor = $self->_buckets->find({jobs => {'$elemMatch' => {status => 'RUNNING'}}});
+    my $cursor = $self->_buckets->find({'job.status' => 'RUNNING'});
     while ($bucket = $cursor->next) {
         last unless $cb->($bucket);
     }
@@ -64,14 +63,13 @@ sub foreach_ordered_buckets {
     my $bucket;
     my $cursor = $self->_buckets->find(
         {
-            jobs => {
-                '$elemMatch' => {
-                    '$or' => [{status => 'TODO'}, {status => 'PENDING'}],
-                    run_after => {'$lte' => time}
-                }
-            }
+            '$or' => [
+                {'job.status' =>    'TODO'},
+                {'job.status' => 'PENDING'}
+            ],
+            'job.run_after' => {'$lte' => time}
         },
-        {sort => ['jobs.priority' => -1, 'jobs.run_time' => 1]}
+        {sort => ['job.priority' => -1, 'job.reference_time' => 1]}
     );
     while ($bucket = $cursor->next) {
         last unless $cb->($bucket);
@@ -82,7 +80,7 @@ sub foreach_ordered_buckets {
 #md_
 sub insert_bucket {
     my ($self, $bucket) = @_;
-    $self->_buckets->insert_one({_id => delete $bucket->{id}, %$bucket});
+    $self->_buckets->insert_one({_id => $bucket->id, %{$bucket->unbless}});
 }
 
 #md_### maybe_insert_bucket()
@@ -92,16 +90,12 @@ sub maybe_insert_bucket {
     return
         if defined $category && $self->_buckets->count_documents(
             {
-                jobs => {
-                    '$elemMatch' => {
-                        category => $category,
-                        '$or' => [
-                            {status =>    'TODO'},
-                            {status => 'RUNNING'},
-                            {status => 'PENDING'}
-                        ]
-                    }
-                }
+                'job.category' => $category,
+                '$or' => [
+                    {'job.status' =>    'TODO'},
+                    {'job.status' => 'RUNNING'},
+                    {'job.status' => 'PENDING'}
+                ]
             },
             {limit => 1}
         );
@@ -113,7 +107,7 @@ sub maybe_insert_bucket {
 #md_
 sub replace_bucket {
     my ($self, $bucket) = @_;
-    $self->_buckets->replace_one({_id => delete $bucket->{id}}, $bucket);
+    $self->_buckets->replace_one({_id => $bucket->id}, $bucket->unbless);
 }
 
 1;

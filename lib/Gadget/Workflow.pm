@@ -85,6 +85,12 @@ has 'data' => (
     is => 'rw', isa => HashRef, required => 1
 );
 
+#md_### history
+#md_
+has 'history' => (
+    is => 'ro', isa => ArrayRef[HashRef], default => sub { [] }
+);
+
 #md_### finished_at
 #md_
 has 'finished_at' => (
@@ -100,7 +106,7 @@ sub unbless {
     my ($self) = @_;
     my $data = {};
     $data->{$_} = $self->$_
-        foreach qw(id label origin title priority first_step all_steps created_at status data finished_at);
+        foreach qw(id label origin title priority first_step all_steps created_at status data history finished_at);
     return $data;
 };
 

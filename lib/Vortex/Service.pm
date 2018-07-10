@@ -93,8 +93,8 @@ sub build_API {
 #md_### _create_bucket()
 #md_
 sub _create_bucket {
-    my ($self) = @_;
-    return Vortex::Bucket->new(runner => $self, backend => $self->_backend);
+    my $self = shift;
+    return Vortex::Bucket->new(runner => $self, backend => $self->_backend, @_);
 }
 
 #md_### _declare_job()
@@ -122,11 +122,10 @@ sub _declare_job {
 sub _insert_job {
     my ($self, $message) = @_;
     my $job = Gadget::Job->new(runner => $self, %{$message->{payload}});
-    my $bucket = $self->_create_bucket;
     my $inserted;
     {
         my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        $inserted = $bucket->maybe_insert($job);
+        $inserted = $self->_create_bucket(job => $job->unbless)->maybe_insert($job->category);
     }
     if ($inserted) {
         $self->_declare_job($job);

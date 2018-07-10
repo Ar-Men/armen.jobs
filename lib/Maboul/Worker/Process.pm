@@ -161,7 +161,7 @@ sub _job_execute {
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
         if ($hjob && (my $job = $self->_build_job($hjob))) {
             $self->_job_counter($self->_job_counter + 1);
-            $self->info('Job N° ', $self->_job_counter, '/', $self->_max_jobs);
+            $self->info(sprintf('Job N° %d/%d', $self->_job_counter, $self->_max_jobs));
             $job->execute;
         }
     }

@@ -35,10 +35,10 @@ has 'id' => (
     is => 'lazy', isa => Str
 );
 
-#md_### jobs
+#md_### _callbacks
 #md_
-has 'jobs' => (
-    is => 'ro', isa => ArrayRef[HashRef], default => sub { [] }
+has '_callbacks' => (
+    is => 'ro', isa => ArrayRef[CodeRef], default => sub { [] }, init_arg => undef
 );
 
 #md_### workflow
@@ -47,10 +47,10 @@ has 'workflow' => (
     is => 'rw', isa => Maybe[HashRef], default => sub { undef }
 );
 
-#md_### _callbacks
+#md_### job
 #md_
-has '_callbacks' => (
-    is => 'ro', isa => ArrayRef[CodeRef], default => sub { [] }, init_arg => undef
+has 'job' => (
+    is => 'rw', isa => HashRef, required => 1
 );
 
 #md_## Les méthodes
@@ -60,31 +60,30 @@ has '_callbacks' => (
 #md_
 sub _build_id {
     my $self = shift;
-    return $self->workflow ? $self->workflow->{id} : $self->jobs->[0]->{id};
+    return $self->workflow ? $self->workflow->{id} : $self->job->{id};
 }
 
-#md_### _unbless()
+#md_### unbless()
 #md_
-sub _unbless {
+sub unbless {
     my ($self) = @_;
     my $data = {};
-    $data->{$_} = $self->$_ foreach qw(id jobs workflow);
+    $data->{$_} = $self->$_ foreach qw(workflow job);
     return $data;
 };
+
+#md_### maybe_insert()
+#md_
+sub maybe_insert {
+    my ($self, $category) = @_;
+    return $self->backend->maybe_insert_bucket($self, $category);
+}
 
 #md_### get_job()
 #md_
 sub get_job {
     my ($self) = @_;
-    return Gadget::Job->new(runner => $self->runner, %{$self->jobs->[-1]});
-}
-
-#md_### maybe_insert()
-#md_
-sub maybe_insert {
-    my ($self, $job) = @_;
-    push @{$self->jobs}, $job->unbless;
-    return $self->backend->maybe_insert_bucket($self->_unbless, $job->category);
+    return Gadget::Job->new(runner => $self->runner, %{$self->job});
 }
 
 #md_### push_callback()
@@ -95,7 +94,7 @@ sub push_callback { push @{shift->_callbacks}, @_ }
 #md_
 sub update_job {
     my ($self, $job, $cb) = @_;
-    $self->jobs->[-1] = $job->unbless;
+    $self->job($job->unbless);
     $self->push_callback($cb)
         if $cb;
 }
@@ -104,7 +103,7 @@ sub update_job {
 #md_
 sub replace {
     my ($self) = @_;
-    $self->backend->replace_bucket($self->_unbless);
+    $self->backend->replace_bucket($self);
     $_->() foreach @{$self->_callbacks};
 }
 
@@ -119,7 +118,7 @@ sub _get_running_jobs {
     $backend->foreach_running_buckets(
         sub {
             my $bucket = shift;
-            my $job = $bucket->{jobs}->[-1];
+            my $job = $bucket->{job};
             # Un job exclusif de type 'ALL' est en cours ?
             if ($job->{exclusivity} eq 'ALL') {
                 $running = undef;
@@ -150,7 +149,7 @@ sub get_next_job {
     $backend->foreach_ordered_buckets(
         sub {
             my $bucket = shift;
-            my $job = $bucket->{jobs}->[-1];
+            my $job = $bucket->{job};
             my $exclusivity = $job->{exclusivity};
             # Un job exclusif mais il y a encore des jobs en cours ?
             return
