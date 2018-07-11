@@ -15,9 +15,10 @@ package Gadget::Job;
 use Exclus::Exclus;
 use Guard qw(guard);
 use Moo;
+use Safe::Isa qw($_isa);
 use Try::Tiny;
 use Types::Standard qw(ArrayRef Bool HashRef Int Maybe Str);
-use Exclus::Util qw(create_uuid to_priority);
+use Exclus::Util qw(create_uuid time_to_string to_priority);
 use Gadget::Types qw(JobExclusivity JobStatus);
 use namespace::clean;
 
@@ -192,10 +193,66 @@ sub add_history {
     };
 }
 
+#md_### _get_last_history()
+#md_
+sub _get_last_history { return $_[0]->history->[-1] }
+
+#md_### _set_history_status()
+#md_
+sub _set_history_status { return $_[0]->_get_last_history->{status} = $_[1] }
+
+#md_### _set_history_run_after()
+#md_
+sub _set_history_run_after { return $_[0]->_get_last_history->{run_after} = $_[1] }
+
+#md_### _set_history_begin()
+#md_
+sub _set_history_begin { $_[0]->_get_last_history->{begin} = time }
+
+#md_### _set_history_end()
+#md_
+sub _set_history_end { $_[0]->_get_last_history->{end} = time }
+
+#md_### _set_history_error()
+#md_
+sub _set_history_error { return $_[0]->_get_last_history->{error} = $_[1] }
+
+#md_### _set_status()
+#md_
+sub _set_status {
+    my ($self, $status) = @_;
+    $self->status($self->_set_history_status($status));
+}
+
+#md_### _set_run_after()
+#md_
+sub _set_run_after {
+    my ($self, $after) = @_;
+    $self->run_after($self->_set_history_run_after($after));
+}
+
+#md_### set_run_after()
+#md_
+sub set_run_after {
+    my ($self, $delay) = @_;
+    $self->_set_run_after(time + ($self->retry_count * $delay + $delay) * 60);
+}
+
+#md_### pending()
+#md_
+sub pending {
+    my ($self, $delay) = @_;
+    $self->_set_run_after(time + $delay * 60);
+    $self->_set_status('PENDING');
+    $self->logger->info('Job continue', [run_after => time_to_string($self->run_after)]);
+}
+
 #md_### succeeded()
 #md_
 sub succeeded {
-    my ($self) = @_; #AFAC
+    my ($self) = @_;
+    $self->_set_run_after(0);
+    $self->_set_status('SUCCEEDED');
 }
 
 #md_### _prepare_logger()
@@ -213,6 +270,7 @@ sub _prepare_logger {
 sub _before_run {
     my ($self) = @_;
     $self->logger->info('Job begin', [application => $self->application, type => $self->type, label => $self->label]);
+    $self->_set_history_begin;
 }
 
 #md_### run()
@@ -221,10 +279,71 @@ sub run {
     my ($self) = @_;
 }
 
+#md_### _update()
+#md_
+sub _update {
+    my ($self) = @_;
+    $self->runner->broker->publish('job.update', $self->priority, $self->unbless);
+}
+
+#md_### _can_retry()
+#md_
+sub _can_retry {
+    my ($self, $exception) = @_;
+    my $delay;
+    if ($exception->$_isa('EX') && ($delay = $exception->retry)) {
+        my $max_attempts = $exception->max_attempts(100);
+        undef($delay) if $self->retry_count >= $max_attempts;
+    }
+    return $delay;
+}
+
+#md_### _retry()
+#md_
+sub _retry {
+    my ($self, $exception, $delay) = @_;
+    $self->set_run_after($delay);
+    my $retry_count = $self->retry_count;
+    $self->retry_count(++$retry_count);
+    $self->_set_status('PENDING');
+    $self->_update;
+    $self->logger->warning("$exception");
+    if ($retry_count >= 10) {
+        $self->logger->warning(
+            "Le nombre de tentatives d'exécution pour cette tâche est conséquent",
+            [
+                id          => $self->id,
+                application => $self->application,
+                type        => $self->type,
+                origin      => $self->origin,
+                priority    => $self->priority,
+                workflow    => $self->workflow,
+                retry_count => $retry_count
+            ]
+        );
+    }
+    $self->logger->info('Job retry', [run_after => time_to_string($self->run_after)]);
+}
+
 #md_### _after_run()
 #md_
 sub _after_run {
-    my ($self, $maybe_exception) = @_;
+    my ($self, $exception) = @_;
+    $self->_set_history_end;
+    if ($exception) {
+        $self->_set_history_error("$exception");
+        if (my $delay = $self->_can_retry($exception)) {
+            $self->_retry($exception, $delay);
+        }
+        else {
+            $self->_set_status('FAILED');
+            $self->_update;
+            $self->logger->error("$exception");
+        }
+    }
+    else {
+        $self->_update;
+    }
     $self->logger->info(
         'Job end',
         [application => $self->application, type => $self->type, label => $self->label, status => $self->status]

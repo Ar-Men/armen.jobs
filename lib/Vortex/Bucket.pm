@@ -121,7 +121,7 @@ sub _get_running_jobs {
             my $job = $bucket->{job};
             # Un job exclusif de type 'ALL' est en cours ?
             if ($job->{exclusivity} eq 'ALL') {
-                $running = undef;
+                undef($running);
                 return;
             }
             my $application = $job->{application};
