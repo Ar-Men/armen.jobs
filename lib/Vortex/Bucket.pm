@@ -110,6 +110,12 @@ sub replace {
 #md_## Les méthodes de la classe
 #md_
 
+#md_
+sub _build_bucket {
+    my ($class, $runner, $backend, $bucket) = @_;
+    return $class->new(runner => $runner, backend => $backend, %$bucket);
+}
+
 #md_### _get_running_jobs()
 #md_
 sub _get_running_jobs {
@@ -179,12 +185,20 @@ sub get_next_job {
             }
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
 ########### Voici l'élu!
-            $next = $class->new(runner => $runner, backend => $backend, %$bucket);
+            $next = $class->_build_bucket($runner, $backend, $bucket);
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
             return;
         }
     );
     return $next;
+}
+
+#md_### get_bucket()
+#md_
+sub get_bucket {
+    my ($class, $runner, $backend, $job_id) = @_;
+    return unless (my $bucket = $backend->get_bucket($job_id));
+    return   $class->_build_bucket($runner, $backend, $bucket);
 }
 
 1;

@@ -76,6 +76,13 @@ sub foreach_ordered_buckets {
     }
 }
 
+#md_### get_bucket()
+#md_
+sub get_bucket {
+    my ($self, $job_id) = @_;
+    return $self->_buckets->find_one({'job.id' => $job_id});
+}
+
 #md_### insert_bucket()
 #md_
 sub insert_bucket {

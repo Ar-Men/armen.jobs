@@ -19,6 +19,7 @@ use Try::Tiny;
 use Types::Standard qw(InstanceOf);
 use Exclus::Util qw(plugin);
 use Gadget::Job;
+use Gadget::Workflow;
 use Vortex::Bucket;
 use namespace::clean;
 
@@ -142,10 +143,40 @@ sub _insert_job {
     }
 }
 
+#md_### _execute_workflow()
+#md_
+sub _execute_workflow {
+    my ($self, $bucket, $job, $workflow) = @_;
+}
+
 #md_### _update_job()
 #md_
 sub _update_job {
     my ($self, $message) = @_;
+    my $job = Gadget::Job->new(runner => $self, %{$message->{payload}});
+    if (my $bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $job->id)) {
+        $bucket->update_job($job, sub { $job->export });
+        # Ce job appartient-il à un workflow ?
+        if ($job->status ne 'PENDING' && $bucket->workflow) {
+            my $workflow = Gadget::Workflow->new(runner => $self, %{$bucket->workflow});
+            if ($job->workflow_id && $job->workflow_id eq $workflow->id) {
+                $self->_execute_workflow($bucket, $job, $workflow);
+            }
+            else {...} #TODO: Abort
+        }
+        my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        $bucket->replace;
+    }
+    else {
+        $self->error(
+            "Impossible de trouver le 'bucket' correspondant au job à mettre à jour",
+            [
+                job         => $job->id,
+                application => $job->application,
+                type        => $job->type
+            ]
+        );
+    }
 }
 
 #md_### _notify_job()
