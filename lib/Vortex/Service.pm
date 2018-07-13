@@ -147,26 +147,26 @@ sub _insert_job {
 #md_
 sub _execute_workflow {
     my ($self, $bucket, $workflow, $job) = @_;
-    try {
-        if ($job = $workflow->execute($job)) {
-            $bucket->update_job($job->unbless, sub { $self->_declare_job($job) });
-        }
-        else {
-            $bucket->update_job(
-                undef,
-                sub {
-                    $self->info(
-                        'Workflow end',
-                        [id => $workflow->id, label => $workflow->label, status => $workflow->status]
-                    );
-                }
-            );
-        }
+    if ($job = $workflow->execute($job)) {
+        $bucket->update_job($job->unbless, sub { $self->_declare_job($job) });
     }
-    catch {
-$self->error("$_"); #AFAC
-    };
-    $bucket->update_workflow($workflow->unbless, sub { $workflow->export });
+    else {
+        $bucket->update_job(
+            undef,
+            sub {
+                $self->info(
+                    'Workflow end',
+                    [id => $workflow->id, label => $workflow->label, status => $workflow->status]
+                );
+            }
+        );
+    }
+    $bucket->update_workflow(
+        $workflow->unbless,
+        sub {
+            $workflow->export if $workflow->status ne 'RUNNING';
+        }
+    );
 }
 
 #md_### _update_job()

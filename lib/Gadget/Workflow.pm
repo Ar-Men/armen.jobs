@@ -15,6 +15,7 @@ package Gadget::Workflow;
 use Exclus::Exclus;
 use Moo;
 use Ref::Util qw(is_ref is_hashref);
+use Try::Tiny;
 use Types::Standard qw(ArrayRef HashRef Int Maybe Str);
 use Exclus::Exceptions;
 use Exclus::Util qw(create_uuid to_priority);
@@ -134,56 +135,68 @@ sub _get_step {
 #md_
 sub _get_next_step {
     my ($self, $job) = @_;
-    my $label;
-    if ($job) {
-        # Récupération de la valeur 'next_step' du 'step' qui vient de se terminer
-        my $step = $self->_get_step($job->label);
-        my $next_step = exists $step->{next_step} ? $step->{next_step} : undef;
-        if ($next_step) {
-            if (is_ref($next_step)) {
-                if (is_hashref($next_step)) {
-                    if (defined $job->next_key && exists $next_step->{$job->next_key}) {
-                        $label = $next_step->{$job->next_key};
-                    }
-                    elsif (exists $next_step->{$job->status}) {
-                        $label = $next_step->{$job->status};
-                    }
-                    elsif (exists $next_step->{_default}) {
-                        $label = $next_step->{_default};
-                    }
-                }
-                if (!defined $label || is_ref($label)) {
-                    EX->throw({ ##//////////////////////////////////////////////////////////////////////////////////////
-                        message => "Il est impossible de déterminer la prochaîne étape de ce workflow",
-                        params  => [current_step => $job->label, workflow => $self->id]
-                    });
-                }
+    my ($label, $step);
+    try {
+        if ($job) {
+            if ($job->workflow_next_step) {
+                $label = $job->workflow_next_step;
             }
             else {
-                $label = $next_step;
+                my $step = $self->_get_step($job->label);
+                my $next_step = exists $step->{next_step} ? $step->{next_step} : undef;
+                if ($next_step) {
+                    if (is_ref($next_step)) {
+                        if (is_hashref($next_step)) {
+                            if (defined $job->next_key && exists $next_step->{$job->next_key}) {
+                                $label = $next_step->{$job->next_key};
+                            }
+                            elsif (exists $next_step->{$job->status}) {
+                                $label = $next_step->{$job->status};
+                            }
+                            elsif (exists $next_step->{_default}) {
+                                $label = $next_step->{_default};
+                            }
+                        }
+                        if (!defined $label || is_ref($label)) {
+                            EX->throw({ ##//////////////////////////////////////////////////////////////////////////////
+                                message => "Il est impossible de déterminer la prochaîne étape de ce workflow",
+                                params  => [current_step => $job->label, workflow => $self->id]
+                            });
+                        }
+                    }
+                    else {
+                        $label = $next_step;
+                    }
+                }
+                else {
+                    $self->status(defined $job->workflow_failed ? 'FAILED' : 'SUCCEEDED');
+                    $self->finished_at(time);
+                }
             }
         }
+        else {
+            $label = $self->first_step;
+        }
+###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
+####### L'éventuelle prochaine étape
+        $step = $self->_get_step($label)
+            if $label;
+###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
     }
-    else {
-        $label = $self->first_step;
-    }
-
-    # Le prochain "step" si il existe
-    return ($label, $label ? $self->_get_step($label) : undef);
+    catch {
+        $self->logger->error("$_");
+        $self->status('ABORTED');
+        $self->finished_at(time);
+    };
+    return ($label, $step);
 }
 
 #md_### _get_next_job()
 #md_
 sub _get_next_job {
     my ($self, $job) = @_;
-    push @{$self->history}, $job->unbless
-        if $job;
     my ($label, $step) = $self->_get_next_step($job);
-    unless ($label) {
-        $self->status(defined $job->workflow_failed ? 'FAILED' : 'SUCCEEDED');
-        $self->finished_at(time);
-        return;
-    }
+    return unless $step;
     return Gadget::Job->new(
         runner          => $self->runner,
         label           => $label,
@@ -199,7 +212,12 @@ sub _get_next_job {
 
 #md_### execute()
 #md_
-sub execute { return shift->_get_next_job(@_) }
+sub execute {
+    my ($self, $job) = @_;
+    push @{$self->history}, $job->unbless
+        if $job;
+    return $self->_get_next_job($job);
+}
 
 1;
 __END__
