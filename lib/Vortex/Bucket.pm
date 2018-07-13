@@ -50,7 +50,7 @@ has 'workflow' => (
 #md_### job
 #md_
 has 'job' => (
-    is => 'rw', isa => HashRef, required => 1
+    is => 'rw', isa => Maybe[HashRef], required => 1
 );
 
 #md_## Les méthodes
@@ -72,18 +72,18 @@ sub unbless {
     return $data;
 };
 
-#md_### maybe_insert()
-#md_
-sub maybe_insert {
-    my ($self, $category) = @_;
-    return $self->backend->maybe_insert_bucket($self, $category);
-}
-
 #md_### get_job()
 #md_
 sub get_job {
     my ($self) = @_;
     return Gadget::Job->new(runner => $self->runner, %{$self->job});
+}
+
+#md_### maybe_insert()
+#md_
+sub maybe_insert {
+    my ($self, $category) = @_;
+    return $self->backend->maybe_insert_bucket($self, $category);
 }
 
 #md_### push_callback()
@@ -94,9 +94,26 @@ sub push_callback { push @{shift->_callbacks}, @_ }
 #md_
 sub update_job {
     my ($self, $job, $cb) = @_;
-    $self->job($job->unbless);
+    $self->job($job);
     $self->push_callback($cb)
         if $cb;
+}
+
+#md_### update_workflow()
+#md_
+sub update_workflow {
+    my ($self, $workflow, $cb) = @_;
+    $self->workflow($workflow);
+    $self->push_callback($cb)
+        if $cb;
+}
+
+#md_### insert()
+#md_
+sub insert {
+    my ($self) = @_;
+    $self->backend->insert_bucket($self);
+    $_->() foreach @{$self->_callbacks};
 }
 
 #md_### replace()

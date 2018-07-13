@@ -59,7 +59,7 @@ sub _get_next_job {
     my $job = $bucket->get_job;
     $job->add_history($node, $worker);
     $job->status('RUNNING');
-    $bucket->update_job($job);
+    $bucket->update_job($job->unbless);
     $bucket->replace;
     return $job;
 }
@@ -146,7 +146,27 @@ sub _insert_job {
 #md_### _execute_workflow()
 #md_
 sub _execute_workflow {
-    my ($self, $bucket, $job, $workflow) = @_;
+    my ($self, $bucket, $workflow, $job) = @_;
+    try {
+        if ($job = $workflow->execute($job)) {
+            $bucket->update_job($job->unbless, sub { $self->_declare_job($job) });
+        }
+        else {
+            $bucket->update_job(
+                undef,
+                sub {
+                    $self->info(
+                        'Workflow end',
+                        [id => $workflow->id, label => $workflow->label, status => $workflow->status]
+                    );
+                }
+            );
+        }
+    }
+    catch {
+$self->error("$_"); #AFAC
+    };
+    $bucket->update_workflow($workflow->unbless, sub { $workflow->export });
 }
 
 #md_### _update_job()
@@ -155,14 +175,16 @@ sub _update_job {
     my ($self, $message) = @_;
     my $job = Gadget::Job->new(runner => $self, %{$message->{payload}});
     if (my $bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $job->id)) {
-        $bucket->update_job($job, sub { $job->export });
+        $bucket->update_job($job->unbless, sub { $job->export });
         # Ce job appartient-il à un workflow ?
         if ($job->status ne 'PENDING' && $bucket->workflow) {
             my $workflow = Gadget::Workflow->new(runner => $self, %{$bucket->workflow});
             if ($job->workflow_id && $job->workflow_id eq $workflow->id) {
-                $self->_execute_workflow($bucket, $job, $workflow);
+                $self->_execute_workflow($bucket, $workflow, $job);
             }
-            else {...} #TODO: Abort
+            else {
+                $self->logger->unexpected_error;
+            }
         }
         my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         $bucket->replace;
@@ -189,6 +211,26 @@ sub _notify_job {
 #md_
 sub _insert_workflow {
     my ($self, $message) = @_;
+    my $workflow = Gadget::Workflow->new(runner => $self, %{$message->{payload}});
+    my $bucket = $self->_create_bucket(workflow => $workflow->unbless, job => undef);
+    $bucket->push_callback(
+        sub {
+            $self->info(
+                'New workflow [begin]',
+                [
+                    id       => $workflow->id,
+                    label    => $workflow->label,
+                    origin   => $workflow->origin,
+                    title    => $workflow->title,
+                    priority => $workflow->priority
+                ]
+            );
+            $workflow->export;
+        }
+    );
+    $self->_execute_workflow($bucket, $workflow);
+    my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    $bucket->insert;
 }
 
 #md_### on_message()

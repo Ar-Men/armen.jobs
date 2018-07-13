@@ -60,7 +60,7 @@ has 'origin' => (
 #md_### priority
 #md_
 has 'priority' => (
-    is => 'ro', isa => Int, coerce => sub { to_priority($_[0]) }, required => 1
+    is => 'ro', isa => Int, coerce => sub { to_priority($_[0]) }, default => sub { 'NONE' }
 );
 
 #md_### exclusivity
@@ -97,12 +97,6 @@ has 'cfg' => (
 #md_
 has 'workflow_id' => (
     is => 'ro', isa => Maybe[Str], default => sub { undef }
-);
-
-#md_### workflow_state
-#md_
-has 'workflow_state' => (
-    is => 'ro', isa => Bool, default => sub { 1 }
 );
 
 #md_### created_at
@@ -147,9 +141,21 @@ has 'history' => (
     is => 'ro', isa => ArrayRef[HashRef], default => sub { [] }
 );
 
-#md_### result
+#md_### next_key
 #md_
-has 'result' => (
+has 'next_key' => (
+    is => 'rw', isa => Maybe[Str], default => sub { undef }
+);
+
+#md_### workflow_failed
+#md_
+has 'workflow_failed' => (
+    is => 'rw', isa => Maybe[Bool], default => sub { undef }
+);
+
+#md_### workflow_next_step
+#md_
+has 'workflow_next_step' => (
     is => 'rw', isa => Maybe[Str], default => sub { undef }
 );
 
@@ -163,8 +169,9 @@ sub unbless {
     my $data = {};
     $data->{$_} = $self->$_
         foreach qw(
-            id application  type  label  origin  priority  exclusivity  category  group  reference_time  cfg
-            workflow_id workflow_state created_at status run_after retry_count public private history result
+            id application type label origin  priority  exclusivity category group
+            reference_time cfg workflow_id created_at status run_after retry_count
+            public  private history  next_key  workflow_failed  workflow_next_step
         );
     return $data;
 }
