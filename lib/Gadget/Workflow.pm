@@ -138,8 +138,8 @@ sub _get_next_step {
     my ($label, $step);
     try {
         if ($job) {
-            if ($job->workflow_next_step) {
-                $label = $job->workflow_next_step;
+            if ($job->next_step_label) {
+                $label = $job->next_step_label;
             }
             else {
                 my $step = $self->_get_step($job->label);
@@ -147,8 +147,8 @@ sub _get_next_step {
                 if ($next_step) {
                     if (is_ref($next_step)) {
                         if (is_hashref($next_step)) {
-                            if (defined $job->next_key && exists $next_step->{$job->next_key}) {
-                                $label = $next_step->{$job->next_key};
+                            if (defined $job->next_step_key && exists $next_step->{$job->next_step_key}) {
+                                $label = $next_step->{$job->next_step_key};
                             }
                             elsif (exists $next_step->{$job->status}) {
                                 $label = $next_step->{$job->status};

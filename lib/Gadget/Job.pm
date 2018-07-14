@@ -143,9 +143,15 @@ has 'history' => (
     is => 'ro', isa => ArrayRef[HashRef], default => sub { [] }
 );
 
-#md_### next_key
+#md_### next_step_key
 #md_
-has 'next_key' => (
+has 'next_step_key' => (
+    is => 'rw', isa => Maybe[Str], default => sub { undef }
+);
+
+#md_### next_step_label
+#md_
+has 'next_step_label' => (
     is => 'rw', isa => Maybe[Str], default => sub { undef }
 );
 
@@ -153,12 +159,6 @@ has 'next_key' => (
 #md_
 has 'workflow_failed' => (
     is => 'rw', isa => Maybe[Bool], default => sub { undef }
-);
-
-#md_### workflow_next_step
-#md_
-has 'workflow_next_step' => (
-    is => 'rw', isa => Maybe[Str], default => sub { undef }
 );
 
 #md_## Les méthodes
@@ -173,7 +173,7 @@ sub unbless {
         foreach qw(
             id application type label origin  priority  exclusivity category group
             reference_time cfg workflow_id created_at status run_after retry_count
-            public  private history  next_key  workflow_failed  workflow_next_step
+            public private history next_step_key next_step_label   workflow_failed
         );
     return $data;
 }
