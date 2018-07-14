@@ -15,6 +15,7 @@ package Gadget::Job;
 use Exclus::Exclus;
 use Guard qw(guard);
 use Moo;
+use Moo::Role qw();
 use Safe::Isa qw($_isa);
 use Try::Tiny;
 use Types::Standard qw(ArrayRef Bool HashRef Int Maybe Str);
@@ -45,6 +46,12 @@ has 'application' => (
 #md_
 has 'type' => (
     is => 'ro', isa => Str, required => 1
+);
+
+#md_### role
+#md_
+has 'role' => (
+    is => 'ro', isa => Maybe[Str], default => sub { undef }
 );
 
 #md_### label
@@ -171,9 +178,9 @@ sub unbless {
     my $data = {};
     $data->{$_} = $self->$_
         foreach qw(
-            id application type label origin  priority  exclusivity category group
-            reference_time cfg workflow_id created_at status run_after retry_count
-            public private history next_step_key next_step_label   workflow_failed
+            id  application  type  role  label  origin   priority  exclusivity  category
+            group reference_time cfg workflow_id created_at status run_after retry_count
+            public  private  history   next_step_key   next_step_label   workflow_failed
         );
     return $data;
 }
@@ -286,6 +293,26 @@ sub _before_run {
     $self->_set_history_begin;
 }
 
+#md_### _maybe_apply_role()
+#md_
+sub _maybe_apply_role {
+    my ($self) = @_;
+    if ($self->role) {
+        $self->logger->info('Apply role', [role => $self->role]);
+        my $role = sprintf('%s::Jobs::%s::Role::%s', $self->application, $self->type, $self->role);
+        try {
+            Moo::Role->apply_roles_to_object($self, $role);
+        }
+        catch {
+            EX->throw({ ##//////////////////////////////////////////////////////////////////////////////////////////////
+                message => "Ce rôle ne peut être appliqué (existe t-il ?)",
+                params  => [role => $role],
+                payload => {retry => 30}
+            });
+        };
+    }
+}
+
 #md_### try_run()
 #md_
 sub try_run {...}
@@ -377,7 +404,7 @@ sub execute {
     $self->_before_run;
     my $exception;
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
-    try { $self->run } catch { $exception = $_ };
+    try { $self->_maybe_apply_role; $self->run } catch { $exception = $_ };
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
     $self->_after_run($exception);
 }
