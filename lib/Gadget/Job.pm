@@ -18,6 +18,8 @@ use Moo;
 use Safe::Isa qw($_isa);
 use Try::Tiny;
 use Types::Standard qw(ArrayRef Bool HashRef Int Maybe Str);
+use Exclus::Data;
+use Exclus::Exceptions;
 use Exclus::Util qw(create_uuid time_to_string to_priority);
 use Gadget::Types qw(JobExclusivity JobStatus);
 use namespace::clean;
@@ -187,6 +189,10 @@ sub export {
     );
 }
 
+#md_### get_cfg()
+#md_
+sub get_cfg { return Exclus::Data->new(data => $_[0]->cfg) }
+
 #md_### add_history()
 #md_
 sub add_history {
@@ -280,11 +286,15 @@ sub _before_run {
     $self->_set_history_begin;
 }
 
+#md_### try_run()
+#md_
+sub try_run {...}
+
 #md_### run()
 #md_
 sub run {
     my ($self) = @_;
-sleep 1; #AFAC
+    EX->try_run(sub { $self->try_run }, {retry => 30});
 }
 
 #md_### _update()
@@ -344,6 +354,7 @@ sub _after_run {
             $self->_retry($exception, $delay);
         }
         else {
+            $self->workflow_failed(0) unless defined $self->workflow_failed;
             $self->_set_status('FAILED');
             $self->_update;
             $self->logger->error("$exception");
