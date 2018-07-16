@@ -153,8 +153,8 @@ sub _get_next_step {
                             elsif (exists $next_step->{$job->status}) {
                                 $label = $next_step->{$job->status};
                             }
-                            elsif (exists $next_step->{_default}) {
-                                $label = $next_step->{_default};
+                            elsif (exists $next_step->{__default}) {
+                                $label = $next_step->{__default};
                             }
                         }
                         if (!defined $label || is_ref($label)) {
