@@ -16,10 +16,13 @@ use Exclus::Exclus;
 use AnyEvent;
 use AnyEvent::Fork;
 use AnyEvent::Handle;
-use JSON::MaybeXS qw(encode_json);
+use JSON::MaybeXS qw(decode_json encode_json);
 use Moo;
 use Scalar::Util qw(looks_like_number);
+use Try::Tiny;
 use Types::Standard qw(Bool InstanceOf Maybe Str);
+use Exclus::Data;
+use Exclus::Exceptions;
 use namespace::clean;
 
 extends qw(Obscur::Context);
@@ -45,19 +48,35 @@ has '_ready' => (
     is => 'rw', isa => Bool, default => sub { 0 }, init_arg => undef
 );
 
+#md_### job
+#md_
+has 'job' => (
+    is => 'rw', isa => Maybe[InstanceOf['Exclus::Data']], default => sub { undef }, init_arg => undef
+);
+
 #md_## Les méthodes
 #md_
 
-#md_### _on_data()
+#md_### _on_notification()
 #md_
-sub _on_data {
+sub _on_notification {
     my ($self, $data) = @_;
-    if (looks_like_number($data)) {
-        $self->_ready(1);
+    try {
+        my $notification = Exclus::Data->new(data => decode_json($data));
+        my $type = $notification->get_str('type');
+        if ($type eq 'job') {
+            $self->job($notification->create({default => undef}, 'data'));
+        }
+        elsif ($type eq 'ready') {
+            $self->_ready(1);
+        }
+        else {
+            EX->throw({message => "Notification inconnue", params => [type => $type]}); ##//////////////////////////////
+        }
     }
-    else {
-        $self->logger->error("Donnée inattendue", [data => $data]);
-    }
+    catch {
+        $self->logger->error("$_");
+    };
 }
 
 #md_### _on_worker_events()
@@ -74,7 +93,7 @@ sub _on_worker_events {
         },
         on_read => sub {
             my $handle = shift;
-            $self->_on_data(delete $handle->{rbuf});
+            $self->_on_notification(delete $handle->{rbuf});
         },
         on_eof => sub {
             my $handle = shift;

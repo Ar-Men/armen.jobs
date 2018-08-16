@@ -16,6 +16,8 @@ use Exclus::Exclus;
 use EV;
 use AnyEvent;
 use AnyEvent::Handle;
+use Guard qw(scope_guard);
+use JSON::MaybeXS qw(encode_json);
 use List::Util qw(min);
 use Module::Runtime qw(use_module);
 use Moo;
@@ -125,12 +127,19 @@ sub _setup_applications {
     );
 }
 
+#md_### _send_notification()
+#md_
+sub _send_notification {
+    my ($self, $type, $data) = @_;
+    shift->_socket_handle->push_write(encode_json({type => $type, data => $data}))
+}
+
 #md_### _setup()
 #md_
 sub _setup {
     my ($self) = @_;
     $self->_setup_applications;
-    $self->_socket_handle->push_write($$);
+    $self->_send_notification('ready', $$);
 }
 
 #md_### _build_job()
@@ -162,6 +171,17 @@ sub _job_execute {
         if ($hjob && (my $job = $self->_build_job($hjob))) {
             $self->_job_counter($self->_job_counter + 1);
             $self->info(sprintf('Job N° %d/%d', $self->_job_counter, $self->_max_jobs));
+            $self->_send_notification
+            (
+                'job',
+                {
+                    id          => $job->id,
+                    application => $job->application,
+                    type        => $job->type,
+                    label       => $job->label
+                }
+            );
+            scope_guard { $self->_send_notification('job') };
             $job->execute;
         }
     }
