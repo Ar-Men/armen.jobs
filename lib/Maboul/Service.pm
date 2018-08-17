@@ -15,7 +15,9 @@ package Maboul::Service;
 use Exclus::Exclus;
 use List::Util qw(max min);
 use Moo;
+use Try::Tiny;
 use Types::Standard qw(ArrayRef HashRef InstanceOf);
+use Exclus::Util qw(render_table);
 use Maboul::Worker::Handler;
 use namespace::clean;
 
@@ -44,6 +46,33 @@ has 'ARGV' => (
 
 #md_## Les méthodes
 #md_
+
+#md_### cmd_workers()
+#md_
+sub cmd_workers {
+    my $self = shift;
+    my $rows = [];
+    while (my ($worker, $handler) = each %{$self->_workers}) {
+        my $job = $handler->job;
+        try {
+            push @$rows, [
+                $worker,
+                $job
+                    ? (
+                        $job->get_str('id'         ),
+                        $job->get_str('application'),
+                        $job->get_str('type'       ),
+                        $job->get_str('label'      )
+                    )
+                    : ()
+            ];
+        }
+        catch {
+            $self->error("$_");
+        };
+    }
+    return render_table($rows, 'WORKER', '(JOB>) ID', qw(APPLICATION TYPE LABEL));
+}
 
 #md_### _create_worker_name()
 #md_
