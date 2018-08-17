@@ -250,6 +250,7 @@ sub on_message {
 #md_
 sub on_starting {
     my ($self) = @_;
+    $self->scheduler->add_timer(17, 907, sub { $self->_backend->clean });
     $self->broker->consume($self->name);
 }
 

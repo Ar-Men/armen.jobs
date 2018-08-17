@@ -117,5 +117,15 @@ sub replace_bucket {
     $self->_buckets->replace_one({_id => $bucket->id}, $bucket->unbless);
 }
 
+#md_### clean()
+#md_
+sub clean {
+    my ($self) = @_;
+    # Suppression des buckets qui ce sont terminés avec succès
+    $self->_buckets->delete_many(
+        {'$or' => [{'workflow.status' => 'SUCCEEDED'}, {workflow => undef, 'job.status' => 'SUCCEEDED'}]}
+    );
+}
+
 1;
 __END__
