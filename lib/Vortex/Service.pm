@@ -133,7 +133,7 @@ sub _insert_job {
     }
     else {
         $self->notice(
-            'Un job identique de même catégorie est en cours',
+            'Un job identique de même catégorie existe déjà',
             [
                 application => $job->application,
                 type        => $job->type,
