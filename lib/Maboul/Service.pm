@@ -47,10 +47,14 @@ has 'ARGV' => (
 #md_## Les méthodes
 #md_
 
-#md_### cmd_workers()
+#md_### get_API_cmds()
+#md_
+sub get_API_cmds { {workers => {}} }
+
+ #md_### cmd_workers()
 #md_
 sub cmd_workers {
-    my $self = shift;
+    my ($self) = @_;
     my $rows = [];
     while (my ($worker, $handler) = each %{$self->_workers}) {
         my $job = $handler->job;
