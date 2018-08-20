@@ -17,20 +17,10 @@ use Moo;
 use Types::Standard qw(InstanceOf);
 use namespace::clean;
 
-extends qw(Obscur::Object);
+extends qw(Obscur::Databases::MongoDB);
 
 #md_## Les attributs
 #md_
-
-#md_### _mongo
-#md_
-has '_mongo' => (
-    is => 'ro',
-    isa => InstanceOf['Exclus::Databases::MongoDB'],
-    lazy => 1,
-    default => sub { $_[0]->runner->build_resource('MongoDB', $_[0]->cfg) },
-    init_arg => undef
-);
 
 #md_### _buckets
 #md_
@@ -38,7 +28,7 @@ has '_buckets' => (
     is => 'ro',
     isa => InstanceOf['MongoDB::Collection'],
     lazy => 1,
-    default => sub { $_[0]->_mongo->get_collection(qw(armen_Vortex buckets)) },
+    default => sub { $_[0]->get_collection(qw(armen_Vortex buckets)) },
     init_arg => undef
 );
 
