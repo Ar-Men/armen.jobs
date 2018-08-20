@@ -121,6 +121,7 @@ sub _setup_applications {
         {create => 1},
         sub {
             my ($name, $cfg) = @_;
+            return if $cfg->get_bool({default => 0}, 'disabled');
             $self->debug('Application', [name => $name]);
             use_module("${name}::Application")->setup($self, $cfg);
         }
