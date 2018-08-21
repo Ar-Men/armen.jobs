@@ -299,7 +299,7 @@ sub _maybe_apply_role {
     my ($self) = @_;
     if ($self->role) {
         $self->logger->info('Apply role', [role => $self->role]);
-        my $role = sprintf('%s::Jobs::%s::Role::%s', $self->application, $self->type, $self->role);
+        my $role = join('::', 'Application', $self->application, 'Jobs', $self->type, 'Role', $self->role);
         try {
             Moo::Role->apply_roles_to_object($self, $role);
         }

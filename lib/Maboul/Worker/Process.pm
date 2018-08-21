@@ -123,7 +123,7 @@ sub _setup_applications {
             my ($name, $cfg) = @_;
             return if $cfg->get_bool({default => 0}, 'disabled');
             $self->debug('Application', [name => $name]);
-            use_module("${name}::Application")->setup($self, $cfg);
+            use_module("Application::$name")->setup($self, $cfg);
         }
     );
 }
@@ -147,14 +147,12 @@ sub _setup {
 #md_
 sub _build_job {
     my ($self, $job) = @_;
+    my $class = join('::', 'Application', $job->{application}, 'Jobs', $job->{type});
     return try {
-        return use_module($job->{application} . '::Jobs::' . $job->{type})->new(runner => $self, %$job);
+        return use_module($class)->new(runner => $self, %$job);
     }
     catch {
-        $self->error(
-            "Impossible d'instancier ce job",
-            [application => $job->{application}, type => $job->{type}, error => "$_"]
-        );
+        $self->error("Impossible d'instancier ce job", [class => $class, error => "$_"]);
         #TODO: publish(Job.Abort) -> Vortex
         return;
     };
