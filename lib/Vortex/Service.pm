@@ -46,8 +46,8 @@ has '_backend' => (
 #md_
 sub _build__backend {
     my $self = shift;
-    my $backend_config = $self->cfg->create('backend');
-    return $self->load_object('Vortex::Backend', $backend_config->get_str('use'), $backend_config->create('cfg'));
+    my $config = $self->cfg->create('backend');
+    return $self->load_object('Vortex::Backend', $config->get_str('use'), $config->create('cfg'));
 }
 
 #md_### _get_next_job()

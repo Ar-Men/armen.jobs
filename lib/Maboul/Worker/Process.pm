@@ -120,10 +120,10 @@ sub _setup_applications {
     $app->foreach_key(
         {create => 1},
         sub {
-            my ($name, $cfg) = @_;
-            return if $cfg->get_bool({default => 0}, 'disabled');
+            my ($name, $config) = @_;
+            return if $config->get_bool({default => 0}, 'disabled');
             $self->debug('Application', [name => $name]);
-            use_module("Application::$name")->setup($self, $cfg);
+            use_module("Application::$name")->setup($self, $config->create({default => {}}, 'cfg'));
         }
     );
 }
