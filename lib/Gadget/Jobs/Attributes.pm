@@ -78,8 +78,8 @@ sub import {
             if $is eq 'rw';
         $has->($name => @properties);
     };
-    monkey_patch($target, 'private', sub { $create_attribute->('private', @_) });
-    monkey_patch($target, 'public',  sub { $create_attribute->('public',  @_) });
+    monkey_patch($target, 'has_private', sub { $create_attribute->('private', @_) });
+    monkey_patch($target, 'has_public',  sub { $create_attribute->('public',  @_) });
 }
 
 1;
