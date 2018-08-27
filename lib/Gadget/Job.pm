@@ -290,6 +290,23 @@ sub _prepare_logger {
 sub _before_run {
     my ($self) = @_;
     $self->logger->info('Job begin', [application => $self->application, type => $self->type, label => $self->label]);
+    $self->logger->extra_cb(
+        sub {
+###::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::###
+            my $extra = '<h3>Job</h3>';
+            $extra .= '<ul>';
+            $extra .= sprintf('<li>id=%s</li>',          $self->id);
+            $extra .= sprintf('<li>application=%s</li>', $self->application);
+            $extra .= sprintf('<li>type=%s</li>',        $self->type);
+            $extra .= sprintf('<li>label=%s</li>',       $self->label);
+            $extra .= sprintf('<li>origin=%s</li>',      $self->origin);
+            $extra .= sprintf('<li>priority=%s</li>',    $self->priority);
+            $extra .= sprintf('<li>workflow=%s</li>',    $self->workflow_id);
+            $extra .= '</ul>';
+###::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::###
+            return $extra;
+        }
+    );
     $self->_set_history_begin;
 }
 
@@ -355,16 +372,7 @@ sub _retry {
     $self->logger->warning("$exception");
     if ($retry_count >= 10) {
         $self->logger->warning(
-            "Le nombre de tentatives d'exécution pour cette tâche est conséquent",
-            [
-                id          => $self->id,
-                application => $self->application,
-                type        => $self->type,
-                origin      => $self->origin,
-                priority    => $self->priority,
-                workflow    => $self->workflow,
-                retry_count => $retry_count
-            ]
+            "Le nombre de tentatives d'exécution pour ce job est conséquent", [retry_count => $retry_count]
         );
     }
     $self->logger->info('Job retry', [run_after => time_to_string($self->run_after)]);
@@ -390,6 +398,7 @@ sub _after_run {
     else {
         $self->_update;
     }
+    $self->logger->clear_extra_cb;
     $self->logger->info(
         'Job end',
         [application => $self->application, type => $self->type, label => $self->label, status => $self->status]
