@@ -72,7 +72,7 @@ sub _emit {
 sub try_run {
     my ($self) = @_;
     $self->$_call_if_can('on_events');
-    my $event = $self->_get_next_event // '__start';
+    my $event = $self->_get_next_event // '__run';
     my $end;
     while ($event && !$end) {
         ($event, $end) = $self->_emit($event);
