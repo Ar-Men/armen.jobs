@@ -246,11 +246,19 @@ sub on_message {
     }
 }
 
+#md_### _clean_backend()
+#md_
+sub _clean_backend {
+    my ($self) = @_;
+    $self->info('Clean backend');
+    $self->_backend->clean;
+}
+
 #md_### on_starting()
 #md_
 sub on_starting {
     my ($self) = @_;
-    $self->scheduler->add_timer(17, 907, sub { $self->_backend->clean });
+    $self->scheduler->add_timer(17, 907, sub { $self->_clean_backend });
     $self->broker->consume($self->name);
 }
 

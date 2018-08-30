@@ -78,8 +78,26 @@ sub import {
             if $is eq 'rw';
         $has->($name => @properties);
     };
+
     monkey_patch($target, 'has_private', sub { $create_attribute->('private', @_) });
     monkey_patch($target, 'has_public',  sub { $create_attribute->('public',  @_) });
+
+    monkey_patch($target, 'has_config',  sub {
+        my ($name, $isa, $default_value) = @_;
+        my $default = @_ > 2;
+        my $key = substr($name, 0, 1) eq '_' ? substr($name, 1) : $name;
+        $has->(
+            $name => (
+                is => 'ro',
+                isa => $isa,
+                lazy => 1,
+                default => sub {
+                    $_[0]->get_cfg->get($default ? {type => $isa, default => $default_value} : {type => $isa}, $key)
+                },
+                init_arg => undef
+            )
+        );
+    });
 }
 
 1;
