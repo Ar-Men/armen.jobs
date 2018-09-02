@@ -23,7 +23,7 @@ use Module::Runtime qw(use_module);
 use Moo;
 use Safe::Isa qw($_isa);
 use Try::Tiny;
-use Types::Standard qw(FileHandle InstanceOf Int);
+use Types::Standard -types;
 use namespace::clean;
 
 extends qw(Obscur::Runner::Process);

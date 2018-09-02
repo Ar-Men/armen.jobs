@@ -16,7 +16,7 @@ use Exclus::Exclus;
 use List::Util qw(max min);
 use Moo;
 use Try::Tiny;
-use Types::Standard qw(ArrayRef HashRef InstanceOf);
+use Types::Standard -types;
 use Exclus::Util qw(render_table);
 use Maboul::Worker::Handler;
 use namespace::clean;

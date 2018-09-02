@@ -20,7 +20,7 @@ use JSON::MaybeXS qw(decode_json encode_json);
 use Moo;
 use Scalar::Util qw(looks_like_number);
 use Try::Tiny;
-use Types::Standard qw(Bool InstanceOf Maybe Str);
+use Types::Standard -types;
 use Exclus::Data;
 use Exclus::Exceptions;
 use namespace::clean;

@@ -14,7 +14,7 @@ package Gadget::Jobs::Role::Events;
 
 use Exclus::Exclus;
 use Moo::Role;
-use Types::Standard qw(CodeRef HashRef);
+use Types::Standard -types;
 use Exclus::Exceptions;
 use Exclus::Util qw($_call_if_can);
 

@@ -16,7 +16,7 @@ use Exclus::Exclus;
 use Moo;
 use Ref::Util qw(is_ref is_hashref);
 use Try::Tiny;
-use Types::Standard qw(ArrayRef HashRef Int Maybe Str);
+use Types::Standard -types;
 use Exclus::Exceptions;
 use Exclus::Util qw(create_uuid to_priority);
 use Gadget::Job;

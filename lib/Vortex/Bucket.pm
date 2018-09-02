@@ -14,7 +14,7 @@ package Vortex::Bucket;
 
 use Exclus::Exclus;
 use Moo;
-use Types::Standard qw(ArrayRef CodeRef HashRef InstanceOf Maybe Str);
+use Types::Standard -types;
 use Gadget::Job;
 use namespace::clean;
 

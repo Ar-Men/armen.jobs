@@ -14,7 +14,7 @@ package Vortex::Backend::Plugin::MongoDB;
 
 use Exclus::Exclus;
 use Moo;
-use Types::Standard qw(InstanceOf);
+use Types::Standard -types;
 use namespace::clean;
 
 extends qw(Obscur::Databases::MongoDB);

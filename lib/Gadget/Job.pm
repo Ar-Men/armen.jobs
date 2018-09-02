@@ -18,7 +18,7 @@ use Moo;
 use Moo::Role qw();
 use Safe::Isa qw($_isa);
 use Try::Tiny;
-use Types::Standard qw(ArrayRef Bool HashRef Int Maybe Str);
+use Types::Standard -types;
 use Exclus::Data;
 use Exclus::Exceptions;
 use Exclus::Util qw(create_uuid template time_to_string to_priority);
