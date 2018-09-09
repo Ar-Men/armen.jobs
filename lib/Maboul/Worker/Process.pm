@@ -135,7 +135,7 @@ sub _setup_application {
     else {
         $_app->{$name} = use_module("Application::$name")->setup($self, $app->create({default => {}}, 'cfg'));
     }
-    $self->debug('Application', [name => $name, status => $_app->{$name} ? 'initialized' : 'disabled']);
+    $self->info('Application', [name => $name, status => $_app->{$name} ? 'initialized' : 'disabled']);
 }
 
 #md_### _build_job()
