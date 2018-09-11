@@ -122,29 +122,13 @@ sub _send_notification {
 #md_
 sub _setup { $_[0]->_send_notification('ready', $$) }
 
-#md_### _setup_application()
-#md_
-sub _setup_application {
-    state $_app = {};
-    my ($self, $name) = @_;
-    return if exists $_app->{$name};
-    my $app = $self->config->create('applications', $name);
-    if ($app->get_bool({default => 0}, 'disabled')) {
-        $_app->{$name} = undef;
-    }
-    else {
-        $_app->{$name} = use_module("Application::$name")->setup($self, $app->create({default => {}}, 'cfg'));
-    }
-    $self->info('Application', [name => $name, status => $_app->{$name} ? 'initialized' : 'disabled']);
-}
-
 #md_### _build_job()
 #md_
 sub _build_job {
     my ($self, $job) = @_;
     my $class = join('::', 'Application', $job->{application}, 'Jobs', $job->{type});
     return try {
-        $self->_setup_application($job->{application});
+        $self->setup_application($job->{application});
         return use_module($class)->new(runner => $self, %$job);
     }
     catch {

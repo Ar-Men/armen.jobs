@@ -17,7 +17,6 @@ use Moo;
 use Safe::Isa qw($_isa);
 use Try::Tiny;
 use Types::Standard -types;
-use Exclus::Util qw(plugin);
 use Gadget::Job;
 use Gadget::Workflow;
 use Vortex::Bucket;
@@ -47,7 +46,7 @@ has '_backend' => (
 sub _build__backend {
     my $self = shift;
     my $config = $self->cfg->create('backend');
-    return $self->load_object('Vortex::Backend', $config->get_str('use'), $config->create('cfg'));
+    return $self->load_plugin('Vortex::Backend', $config->get_str('use'), $config->create('cfg'));
 }
 
 #md_### _get_next_job()
