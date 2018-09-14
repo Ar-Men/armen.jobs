@@ -294,7 +294,7 @@ sub _before_run {
         sub {
             template(
                 'armen.jobs',
-                'job',
+                'Gadget.Job',
                 {
                     id          => $self->id,
                     application => $self->application,
