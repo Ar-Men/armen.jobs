@@ -189,11 +189,7 @@ sub unbless {
 #md_
 sub export {
     my ($self) = @_;
-    $self->runner->broker->try_publish(
-        sprintf('job.export.%s.%s', $self->application, $self->origin),
-        'NONE',
-        $self->unbless
-    );
+    $self->runner->broker->try_publish(sprintf('job.export.%s', $self->origin), 'NONE', $self->unbless);
 }
 
 #md_### get_cfg()
@@ -397,6 +393,13 @@ sub _after_run {
     }
     else {
         $self->_update;
+    }
+    if ($self->can('before_end')) {
+        try {
+            $self->before_end;
+        } catch {
+            $self->logger->error("$_");
+        };
     }
     $self->logger->clear_extra_cb;
     $self->logger->info(
