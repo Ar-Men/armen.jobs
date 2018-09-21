@@ -17,7 +17,9 @@ use Moo;
 use Safe::Isa qw($_isa);
 use Try::Tiny;
 use Types::Standard -types;
+use Exclus::Util qw(time_to_string);
 use Gadget::Job;
+use Gadget::Notification;
 use Gadget::Workflow;
 use Vortex::Bucket;
 use namespace::clean;
@@ -204,6 +206,27 @@ sub _update_job {
 #md_
 sub _notify_job {
     my ($self, $message) = @_;
+    my $notification = Gadget::Notification->new(%{$message->{payload}});
+    my $bucket;
+    {
+        my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        if ($bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $notification->job_id)) {
+            $bucket->notify_job($notification->unbless);
+            $bucket->replace;
+        }
+    }
+    unless ($bucket) {
+        $self->error(
+            "Impossible de trouver le 'bucket' correspondant au job à notifier",
+            [
+                notification => $notification->id,
+                origin       => $notification->origin,
+                created_at   => time_to_string($notification->created_at),
+                job          => $notification->job_id,
+                data         => $notification->data
+            ]
+        );
+    }
 }
 
 #md_### _insert_workflow()

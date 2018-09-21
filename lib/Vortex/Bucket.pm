@@ -99,6 +99,16 @@ sub update_job {
         if $cb;
 }
 
+#md_### notify_job()
+#md_
+sub notify_job {
+    my ($self, $notification) = @_;
+    my $job = $self->job;
+    push @{$job->{notifications}}, $notification;
+    $job->{run_after} = time
+        if $job->{status} eq 'PENDING';
+}
+
 #md_### update_workflow()
 #md_
 sub update_workflow {

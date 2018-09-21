@@ -9,7 +9,7 @@
 
 package Gadget::Workflow;
 
-#md_# Gadget::Job
+#md_# Gadget::Workflow
 #md_
 
 use Exclus::Exclus;

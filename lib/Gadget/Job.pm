@@ -144,6 +144,12 @@ has 'private' => (
     is => 'ro', isa => HashRef, default => sub { {} }
 );
 
+#md_### notifications
+#md_
+has 'notifications' => (
+    is => 'ro', isa => ArrayRef, default => sub { [] }
+);
+
 #md_### history
 #md_
 has 'history' => (
@@ -180,7 +186,8 @@ sub unbless {
         foreach qw(
             id  application  type  role  label  origin   priority  exclusivity  category
             group reference_time cfg workflow_id created_at status run_after retry_count
-            public  private  history   next_step_key   next_step_label   workflow_failed
+            public   private   notifications   history   next_step_key   next_step_label
+            workflow_failed
         );
     return $data;
 }
