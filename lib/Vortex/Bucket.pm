@@ -104,9 +104,16 @@ sub update_job {
 sub notify_job {
     my ($self, $notification) = @_;
     my $job = $self->job;
-    push @{$job->{notifications}}, $notification;
-    $job->{run_after} = time
-        if $job->{status} eq 'PENDING';
+    my $status = $job->{status};
+    if ($status eq 'PENDING') {
+        push @{$job->{notifications}}, $notification;
+        $job->{run_after} = time;
+        return 1;
+    }
+    elsif ($status eq 'RUNNING') {
+        return 0;
+    }
+    return;
 }
 
 #md_### update_workflow()

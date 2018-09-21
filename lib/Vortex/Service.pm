@@ -123,7 +123,7 @@ sub _declare_job {
 #md_
 sub _insert_job {
     my ($self, $message) = @_;
-    my $job = Gadget::Job->new(runner => $self, %{$message->{payload}});
+    my $job = Gadget::Job->new(runner => $self, %{$message->payload});
     my $inserted;
     {
         my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -174,7 +174,7 @@ sub _execute_workflow {
 #md_
 sub _update_job {
     my ($self, $message) = @_;
-    my $job = Gadget::Job->new(runner => $self, %{$message->{payload}});
+    my $job = Gadget::Job->new(runner => $self, %{$message->payload});
     if (my $bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $job->id)) {
         $bucket->update_job($job->unbless, sub { $job->export });
         # Ce job appartient-il à un workflow ?
@@ -202,29 +202,45 @@ sub _update_job {
     }
 }
 
+#md_### _get_notification_params()
+#md_
+sub _get_notification_params {
+    my ($self, $notification) = @_;
+    return [
+        notification => $notification->id,
+        origin       => $notification->origin,
+        created_at   => time_to_string($notification->created_at),
+        job          => $notification->job_id,
+        data         => $notification->data
+    ];
+}
+
 #md_### _notify_job()
 #md_
 sub _notify_job {
     my ($self, $message) = @_;
-    my $notification = Gadget::Notification->new(%{$message->{payload}});
-    my $bucket;
-    {
-        my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        if ($bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $notification->job_id)) {
-            $bucket->notify_job($notification->unbless);
-            $bucket->replace;
+    my $notification = Gadget::Notification->new(%{$message->payload});
+    my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    if (my $bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $notification->job_id)) {
+        my $notified = $bucket->notify_job($notification->unbless);
+        if (defined $notified) {
+            if ($notified) {
+                $bucket->replace;
+            }
+            else {
+                $message->retry(60);
+            }
+        }
+        else {
+            undef($unlock);
+            $self->notice("Cette notification est abandonnée", $self->_get_notification_params($notification));
         }
     }
-    unless ($bucket) {
+    else {
+        undef($unlock);
         $self->error(
             "Impossible de trouver le 'bucket' correspondant au job à notifier",
-            [
-                notification => $notification->id,
-                origin       => $notification->origin,
-                created_at   => time_to_string($notification->created_at),
-                job          => $notification->job_id,
-                data         => $notification->data
-            ]
+            $self->_get_notification_params($notification)
         );
     }
 }
@@ -233,7 +249,7 @@ sub _notify_job {
 #md_
 sub _insert_workflow {
     my ($self, $message) = @_;
-    my $workflow = Gadget::Workflow->new(runner => $self, %{$message->{payload}});
+    my $workflow = Gadget::Workflow->new(runner => $self, %{$message->payload});
     my $bucket = $self->_create_bucket(workflow => $workflow->unbless, job => undef);
     $bucket->push_callback(
         sub {
