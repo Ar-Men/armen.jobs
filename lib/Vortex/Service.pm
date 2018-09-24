@@ -175,6 +175,7 @@ sub _execute_workflow {
 sub _update_job {
     my ($self, $message) = @_;
     my $job = Gadget::Job->new(runner => $self, %{$message->payload});
+    my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (my $bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $job->id)) {
         $bucket->update_job($job->unbless, sub { $job->export });
         # Ce job appartient-il à un workflow ?
@@ -187,10 +188,10 @@ sub _update_job {
                 $self->logger->unexpected_error;
             }
         }
-        my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         $bucket->replace;
     }
     else {
+        undef($unlock);
         $self->error(
             "Impossible de trouver le 'bucket' correspondant au job à mettre à jour",
             [
@@ -220,7 +221,7 @@ sub _get_notification_params {
 sub _notify_job {
     my ($self, $message) = @_;
     my $notification = Gadget::Notification->new(%{$message->payload});
-    my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    my $unlock = $self->sync->lock_w_unlock('buckets', 10000); ##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if (my $bucket = Vortex::Bucket->get_bucket($self, $self->_backend, $notification->job_id)) {
         my $notified = $bucket->notify_job($notification->unbless);
         if (defined $notified) {
