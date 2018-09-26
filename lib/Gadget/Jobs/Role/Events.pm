@@ -30,6 +30,8 @@ has '_events' => (
 #md_## Les méthodes
 #md_
 
+requires qw(pending);
+
 #md_### _get_next_event()
 #md_
 sub _get_next_event { return $_[0]->private->{__next_event} }
@@ -78,6 +80,22 @@ sub try_run {
         ($event, $end) = $self->_emit($event);
         $self->_set_next_event($event);
     };
+}
+
+#md_### do_it_again()
+#md_
+sub do_it_again {
+    my ($self) = @_;
+    $self->pending(0);
+    return '__run';
+}
+
+#md_### come_back_later()
+#md_
+sub come_back_later {
+    my ($self, $event, $delay) = @_;
+    $self->pending($delay);
+    return ($event, 1);
 }
 
 1;
