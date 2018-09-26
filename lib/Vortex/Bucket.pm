@@ -106,7 +106,7 @@ sub notify_job {
     my $job = $self->job;
     my $status = $job->{status};
     if ($status eq 'PENDING') {
-        push @{$job->{notifications}}, $notification;
+        $job->{notification} = $notification;
         $job->{run_after} = time;
         return 1;
     }

@@ -15,6 +15,7 @@ package Gadget::Notification;
 use Exclus::Exclus;
 use Moo;
 use Types::Standard -types;
+use Exclus::Data;
 use Exclus::Util qw(create_uuid);
 use namespace::clean;
 
@@ -62,6 +63,10 @@ sub unbless {
     $data->{$_} = $self->$_ foreach qw(id origin created_at job_id data);
     return $data;
 };
+
+#md_### get_data()
+#md_
+sub get_data { Exclus::Data->new(data => $_[0]->data) }
 
 1;
 __END__

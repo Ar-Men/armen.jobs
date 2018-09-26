@@ -22,6 +22,7 @@ use Types::Standard -types;
 use Exclus::Data;
 use Exclus::Exceptions;
 use Exclus::Util qw(create_uuid template time_to_string to_priority);
+use Gadget::Notification;
 use Gadget::Types qw(JobExclusivity JobStatus);
 use namespace::clean;
 
@@ -144,10 +145,10 @@ has 'private' => (
     is => 'ro', isa => HashRef, default => sub { {} }
 );
 
-#md_### notifications
+#md_### notification
 #md_
-has 'notifications' => (
-    is => 'ro', isa => ArrayRef, default => sub { [] }
+has 'notification' => (
+    is => 'rw', isa => Maybe[HashRef], default => sub { undef }
 );
 
 #md_### history
@@ -186,7 +187,7 @@ sub unbless {
         foreach qw(
             id  application  type  role  label  origin   priority  exclusivity  category
             group reference_time cfg workflow_id created_at status run_after retry_count
-            public   private   notifications   history   next_step_key   next_step_label
+            public    private   notification   history   next_step_key   next_step_label
             workflow_failed
         );
     return $data;
@@ -202,6 +203,16 @@ sub export {
 #md_### get_cfg()
 #md_
 sub get_cfg { return Exclus::Data->new(data => $_[0]->cfg) }
+
+#md_### get_notification()
+#md_
+sub get_notification {
+    my ($self) = @_;
+    my $notification = $self->notification;
+    return unless $notification;
+    $self->notification(undef);
+    return Gadget::Notification->new(%$notification);
+}
 
 #md_### add_history()
 #md_
