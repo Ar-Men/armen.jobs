@@ -202,7 +202,7 @@ sub export {
 
 #md_### get_cfg()
 #md_
-sub get_cfg { return Exclus::Data->new(data => $_[0]->cfg) }
+sub get_cfg { Exclus::Data->new(data => $_[0]->cfg) }
 
 #md_### get_notification()
 #md_
@@ -229,15 +229,15 @@ sub add_history {
 
 #md_### _get_last_history()
 #md_
-sub _get_last_history { return $_[0]->history->[-1] }
+sub _get_last_history { $_[0]->history->[-1] }
 
 #md_### _set_history_status()
 #md_
-sub _set_history_status { return $_[0]->_get_last_history->{status} = $_[1] }
+sub _set_history_status { $_[0]->_get_last_history->{status} = $_[1] }
 
 #md_### _set_history_run_after()
 #md_
-sub _set_history_run_after { return $_[0]->_get_last_history->{run_after} = $_[1] }
+sub _set_history_run_after { $_[0]->_get_last_history->{run_after} = $_[1] }
 
 #md_### _set_history_begin()
 #md_
@@ -249,7 +249,7 @@ sub _set_history_end { $_[0]->_get_last_history->{end} = time }
 
 #md_### _set_history_error()
 #md_
-sub _set_history_error { return $_[0]->_get_last_history->{error} = $_[1] }
+sub _set_history_error { $_[0]->_get_last_history->{error} = $_[1] }
 
 #md_### _set_status()
 #md_
