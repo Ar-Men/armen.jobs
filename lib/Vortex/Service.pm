@@ -229,7 +229,7 @@ sub _notify_job {
                 $bucket->replace;
             }
             else {
-                $message->retry(60);
+                $message->retry_after(60);
             }
         }
         else {
