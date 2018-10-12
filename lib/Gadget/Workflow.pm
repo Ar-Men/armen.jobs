@@ -117,7 +117,7 @@ sub unbless {
 #md_
 sub export {
     my ($self) = @_;
-    $self->runner->broker->try_publish(sprintf('workflow.export.%s', $self->origin), 'NONE', $self->unbless);
+    $self->runner->broker->publish(sprintf('workflow.export.%s', $self->origin), 'NONE', $self->unbless);
 }
 
 #md_### _get_step()

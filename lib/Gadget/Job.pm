@@ -197,7 +197,7 @@ sub unbless {
 #md_
 sub export {
     my ($self) = @_;
-    $self->runner->broker->try_publish(sprintf('job.export.%s', $self->origin), 'NONE', $self->unbless);
+    $self->runner->broker->publish(sprintf('job.export.%s', $self->origin), 'NONE', $self->unbless);
 }
 
 #md_### get_cfg()
