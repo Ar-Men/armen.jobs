@@ -36,9 +36,9 @@ requires qw(pending);
 #md_
 sub _get_next_event { return $_[0]->private->{__next_event} }
 
-#md_### _set_next_event()
+#md_### set_next_event()
 #md_
-sub _set_next_event { $_[0]->private->{__next_event} = $_[1] }
+sub set_next_event { $_[0]->private->{__next_event} = $_[1] }
 
 #md_### on()
 #md_
@@ -78,7 +78,7 @@ sub try_run {
     my $end;
     while ($event && !$end) {
         ($event, $end) = $self->_emit($event);
-        $self->_set_next_event($event);
+        $self->set_next_event($event);
     };
 }
 
