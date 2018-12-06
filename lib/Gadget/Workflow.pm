@@ -55,7 +55,7 @@ has 'title' => (
 #md_### priority
 #md_
 has 'priority' => (
-    is => 'ro', isa => Int, coerce => sub { to_priority($_[0]) }, default => sub { 'NONE' }
+    is => 'rw', isa => Int, coerce => sub { to_priority($_[0]) }, default => sub { 'NONE' }
 );
 
 #md_### first_step
