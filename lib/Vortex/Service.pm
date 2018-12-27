@@ -32,6 +32,7 @@ extends qw(Obscur::Runner::Service);
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
 has '+name'        => (default => sub { 'Vortex' });
 has '+description' => (default => sub { 'Le µs chargé de gérer la persistence des jobs, workflows et notifications' });
+has '+automatic_shutdown' => (default => sub { 1 });
 ###----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----###
 
 #md_### _backend
